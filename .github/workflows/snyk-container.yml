@@ -1,66 +1,48 @@
-# Security scanning workflow for Docker containers using Snyk
-# This workflow performs vulnerability scanning on Docker images and uploads results to GitHub Security Code Scanning
-
-name: Snyk Container Security Scan
+name: Snyk Container
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
   schedule:
-    # Run weekly on Wednesday at 12:19 UTC
-    - cron: '19 12 * * 3'
+    - cron: '18 9 * * 3'
 
-permissions: {}  # Reset permissions to none by default
+permissions:
+  contents: read
 
 jobs:
-  snyk-scan:
-    name: Snyk Container Scan
-    runs-on: ubuntu-latest
+  snyk:
     permissions:
-      contents: read        # Required for checkout
-      security-events: write # Required for uploading SARIF results
-      actions: read         # Required for private repositories
-    
+      contents: read
+      security-events: write
+      actions: read
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0    # Fetch all history for better vulnerability scanning
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          load: true
-          tags: local/image-to-test:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      
-      - name: Run Snyk Container scan
-        uses: snyk/actions/docker@master
-        continue-on-error: true  # Don't fail the workflow on vulnerabilities
+      - uses: actions/checkout@v3
+
+      - name: Build a Docker image
+        run: docker build -t your/image-to-test .
+
+      - name: Run Snyk to check Docker image for vulnerabilities
+        continue-on-error: true
+        uses: snyk/actions/docker@14818c4695ecc4045f33c9cee9e795a788711ca4
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: local/image-to-test:${{ github.sha }}
+          image: your/image-to-test
           args: |
             --file=Dockerfile
-            --severity-threshold=high
-            --exclude-base-image-vulns
-            --sarif-file-output=snyk-container.sarif
-      
-      - name: Upload SARIF result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()  # Ensure this runs even if Snyk scan fails
-        with:
-          sarif_file: snyk-container.sarif
-          category: Snyk-Container
+            --sarif-file-output=snyk.sarif
 
-      - name: Clean up
+      - name: Debug SARIF file creation
         if: always()
-        run: docker rmi local/image-to-test:${{ github.sha }}
+        run: |
+          echo "Checking current directory for SARIF file:"
+          ls -la
+          find / -name "*.sarif" 2>/dev/null || echo "SARIF file not found"
+
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
