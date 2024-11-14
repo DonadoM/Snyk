@@ -42,7 +42,7 @@ jobs:
           cache-to: type=gha,mode=max
       
       - name: Run Snyk Container scan
-        uses: snyk/actions/docker@master  # Using master to always get latest stable version
+        uses: snyk/actions/docker@master
         continue-on-error: true  # Don't fail the workflow on vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -52,12 +52,13 @@ jobs:
             --file=Dockerfile
             --severity-threshold=high
             --exclude-base-image-vulns
+            --sarif-file-output=snyk-container.sarif
       
       - name: Upload SARIF result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()  # Ensure this runs even if Snyk scan fails
         with:
-          sarif_file: snyk.sarif
+          sarif_file: snyk-container.sarif
           category: Snyk-Container
 
       - name: Clean up
