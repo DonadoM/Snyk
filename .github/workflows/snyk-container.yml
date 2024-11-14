@@ -32,11 +32,14 @@ jobs:
         image: your/image-to-test
         args: --file=Dockerfile --sarif-file-output=snyk.sarif
 
-    # Paso para limpiar el archivo SARIF eliminando valores nulos en "security-severity"
-    - name: Sanitize SARIF file
+    # Agregamos un paso para verificar y limpiar el archivo SARIF
+    - name: Check and Clean SARIF File
       run: |
-        sed -i 's/"security-severity": null/"security-severity": 0/g' snyk.sarif
-      if: success() || failure()
+        # Reemplaza cualquier valor de severidad "null" con "0" en el archivo SARIF
+        if grep -q '"security-severity": null' snyk.sarif; then
+          sed -i 's/"security-severity": null/"security-severity": 0/g' snyk.sarif
+        fi
+      if: always()
 
     - name: Upload result to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3
