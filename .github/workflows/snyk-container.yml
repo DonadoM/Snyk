@@ -35,14 +35,19 @@ jobs:
             --file=Dockerfile
             --sarif-file-output=snyk.sarif
 
-      - name: Debug SARIF file creation
-        if: always()
+      - name: Check if SARIF file exists
+        id: sarif-check
         run: |
-          echo "Checking current directory for SARIF file:"
-          ls -la
-          find / -name "*.sarif" 2>/dev/null || echo "SARIF file not found"
+          if [ -f "snyk.sarif" ]; then
+            echo "File exists."
+            echo "::set-output name=exists::true"
+          else
+            echo "File does not exist."
+            echo "::set-output name=exists::false"
+          fi
 
       - name: Upload result to GitHub Code Scanning
+        if: steps.sarif-check.outputs.exists == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
