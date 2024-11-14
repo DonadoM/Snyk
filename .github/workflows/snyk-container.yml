@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   snyk:
@@ -39,10 +40,10 @@ jobs:
         id: sarif-check
         run: |
           if [ -f "snyk.sarif" ]; then
-            echo "File exists."
+            echo "SARIF file exists."
             echo "::set-output name=exists::true"
           else
-            echo "File does not exist."
+            echo "SARIF file does not exist."
             echo "::set-output name=exists::false"
           fi
 
@@ -51,3 +52,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
+          category: Snyk-Container
