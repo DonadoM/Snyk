@@ -1,0 +1,65 @@
+# Security scanning workflow for Docker containers using Snyk
+# This workflow performs vulnerability scanning on Docker images and uploads results to GitHub Security Code Scanning
+
+name: Snyk Container Security Scan
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Run weekly on Wednesday at 12:19 UTC
+    - cron: '19 12 * * 3'
+
+permissions: {}  # Reset permissions to none by default
+
+jobs:
+  snyk-scan:
+    name: Snyk Container Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read        # Required for checkout
+      security-events: write # Required for uploading SARIF results
+      actions: read         # Required for private repositories
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # Fetch all history for better vulnerability scanning
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: local/image-to-test:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Run Snyk Container scan
+        uses: snyk/actions/docker@master  # Using master to always get latest stable version
+        continue-on-error: true  # Don't fail the workflow on vulnerabilities
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: local/image-to-test:${{ github.sha }}
+          args: |
+            --file=Dockerfile
+            --severity-threshold=high
+            --exclude-base-image-vulns
+      
+      - name: Upload SARIF result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()  # Ensure this runs even if Snyk scan fails
+        with:
+          sarif_file: snyk.sarif
+          category: Snyk-Container
+
+      - name: Clean up
+        if: always()
+        run: docker rmi local/image-to-test:${{ github.sha }}
