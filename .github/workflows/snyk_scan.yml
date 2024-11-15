@@ -1,6 +1,4 @@
-Puedes implementar la validación del archivo SARIF en tu workflow de la siguiente manera:
 
-```yaml
 name: Snyk Container
 on: push
 jobs:
@@ -34,7 +32,3 @@ jobs:
       with:
         sarif_file: snyk.sarif
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Aquí se usa el token automáticamente
-```
-
-Este cambio añade un paso de validación antes de subir el archivo SARIF para asegurarse de que no contiene valores de severidad nulos.
