@@ -30,7 +30,7 @@ jobs:
       # Paso 3: Ejecutar Snyk para comprobar vulnerabilidades en la imagen Docker
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
-        uses: snyk/actions/docker@v2
+        uses: snyk/actions/docker@v1.107.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
