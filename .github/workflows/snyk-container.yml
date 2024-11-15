@@ -39,22 +39,7 @@ jobs:
         image: your/image-to-test
         args: --file=Dockerfile --severity-threshold=high
 
-    # Paso 4: Validar el archivo SARIF antes de subirlo a GitHub Code Scanning
-    - name: Validate SARIF file
-      if: success() || failure()  # Ejecutar este paso independientemente del resultado de Snyk
-      run: |
-        python -c "
-import json
-with open('snyk.sarif', 'r+') as f:
-    sarif = json.load(f)
-    for run in sarif.get('runs', []):
-        for rule in run.get('tool', {}).get('driver', {}).get('rules', []):
-            if 'security-severity' not in rule or rule['security-severity'] is None:
-                rule['security-severity'] = 5.0  # Asigna una severidad predeterminada si falta
-    f.seek(0)
-    json.dump(sarif, f, indent=2)
-    f.truncate()
-        "
+  
 
     # Paso 5: Subir el archivo SARIF validado a GitHub Code Scanning
     - name: Upload SARIF file to GitHub Code Scanning
