@@ -1,5 +1,4 @@
 name: Snyk Container
-
 on:
   push:
     branches: [ "main" ]
@@ -7,10 +6,8 @@ on:
     branches: [ "main" ]
   schedule:
     - cron: '18 9 * * 3'
-
 permissions:
   contents: read
-
 jobs:
   snyk:
     permissions:
@@ -26,7 +23,7 @@ jobs:
       
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
-        uses: snyk/actions/docker@master  # Cambiado a master en lugar del hash específico
+        uses: snyk/actions/docker@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -35,20 +32,15 @@ jobs:
             --file=Dockerfile
             --sarif-file-output=/github/workspace/snyk.sarif
       
-      - name: Debug SARIF file location
-        if: always()
+      - name: Validate SARIF file
         run: |
-          echo "Current directory:"
-          pwd
-          echo "\nListing current directory:"
-          ls -la
-          echo "\nListing workspace directory:"
-          ls -la /github/workspace/
-          echo "\nSearching for SARIF files:"
-          find / -name "*.sarif" 2>/dev/null || echo "No SARIF files found"
+          if ! jq -e '.runs[].results[].ruleId' /github/workspace/snyk.sarif > /dev/null; then
+            echo "Invalid SARIF file: missing ruleId"
+            exit 1
+          fi
       
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
-        if: always()  # Intentar subir incluso si los pasos anteriores fallan
+        if: always()
         with:
           sarif_file: /github/workspace/snyk.sarif
