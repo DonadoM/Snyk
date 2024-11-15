@@ -32,3 +32,4 @@ jobs:
       with:
         sarif_file: snyk.sarif
       env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
