@@ -1,29 +1,44 @@
-runs-on: ubuntu-latest
+name: Snyk Container Scan
 
-steps:
-  # Paso 1: Checkout del código
-  - name: Checkout code
-    uses: actions/checkout@v3
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
-  # Paso 2: Instalar Docker (si no está instalado)
-  - name: Set up Docker
-    run: |
-      sudo apt-get update
-      sudo apt-get install -y docker.io
+jobs:
+  snyk-container-scan:
+    runs-on: ubuntu-latest
 
-  # Paso 3: Construir la imagen de Docker
-  - name: Build Docker Image
-    run: docker build -t my-container-image:latest .
+    steps:
+      # Paso 1: Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-  # Paso 4: Instalar Snyk CLI
-  - name: Install Snyk CLI
-    run: curl -sL https://snyk.io/install | bash
+      # Paso 2: Instalar Docker (si no está instalado)
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
 
-  # Paso 5: Escanear la imagen del contenedor con Snyk
-  - name: Snyk Container Scan
-    uses: snyk/actions/container@v1
-    with:
-      image: my-container-image:latest
-      args: --file=Dockerfile --severity-threshold=high
-    env:
-      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      # Paso 3: Verificar instalación de Docker
+      - name: Verify Docker installation
+        run: docker --version
+
+      # Paso 4: Construir la imagen de Docker
+      - name: Build Docker Image
+        run: docker build -t my-container-image:latest .
+
+      # Paso 5: Instalar Snyk CLI
+      - name: Install Snyk CLI
+        run: curl -sL https://snyk.io/install | bash
+
+      # Paso 6: Verificar instalación de Snyk
+      - name: Verify Snyk installation
+        run: snyk --version
+
+      # Paso 7: Escanear la imagen del contenedor con Snyk
+      - name: Snyk Container Scan
+        run: snyk container test my-container-image:latest --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
