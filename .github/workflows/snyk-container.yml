@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Checkout del código
+      # Paso 1: Checkout del códig
       - name: Checkout code
         uses: actions/checkout@v3
 
