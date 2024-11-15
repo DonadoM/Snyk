@@ -1,34 +1,17 @@
-name: Snyk Container
-on: push
-jobs:
-  snyk:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read  # Permiso para leer los archivos del repositorio
-      actions: write   # Permiso para ejecutar acciones
-      security-events: write  # Permiso para interactuar con la seguridad del repositorio
+stages:
+  - test
 
-    steps:
-    - uses: actions/checkout@v2  # Checkout del código del repositorio
-    - name: Build Docker image
-      run: docker build -t your/image-to-test .
-    - name: Run Snyk to check Docker image for vulnerabilities
-      continue-on-error: true
-      uses: snyk/actions/docker@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        image: your/image-to-test
-        args: --file=Dockerfile
-    - name: Validate SARIF file
-      run: |
-        if grep -q '"severity": null' snyk.sarif; then
-          echo "Invalid severity value found in SARIF file"
-          exit 1
-        fi
-    - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: snyk.sarif
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+container-scan:
+  stage: test
+  image:
+    name: snyk/snyk:docker
+    entrypoint: [""]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - docker:20.10.11-dind
+  script:
+    - docker build -t app:$CI_COMMIT_SHORT_SHA .
+    - snyk auth $SNYK_TOKEN
+    - snyk container test app:$CI_COMMIT_SHORT_SHA --file=Dockerfile
