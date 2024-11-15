@@ -26,23 +26,29 @@ jobs:
       
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
-        uses: snyk/actions/docker@14818c4695ecc4045f33c9cee9e795a788711ca4
+        uses: snyk/actions/docker@master  # Cambiado a master en lugar del hash específico
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: your/image-to-test
           args: |
             --file=Dockerfile
-            --sarif-file-output=snyk.sarif
+            --sarif-file-output=/github/workspace/snyk.sarif
       
-      - name: Debug SARIF file creation
+      - name: Debug SARIF file location
         if: always()
         run: |
-          echo "Checking current directory for SARIF file:"
+          echo "Current directory:"
+          pwd
+          echo "\nListing current directory:"
           ls -la
-          find / -name "*.sarif" 2>/dev/null || echo "SARIF file not found"
+          echo "\nListing workspace directory:"
+          ls -la /github/workspace/
+          echo "\nSearching for SARIF files:"
+          find / -name "*.sarif" 2>/dev/null || echo "No SARIF files found"
       
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
+        if: always()  # Intentar subir incluso si los pasos anteriores fallan
         with:
-          sarif_file: snyk.sarif
+          sarif_file: /github/workspace/snyk.sarif
