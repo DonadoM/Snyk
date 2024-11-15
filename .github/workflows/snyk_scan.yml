@@ -4,25 +4,22 @@ jobs:
   snyk:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      actions: write
-      security-events: write
+      contents: read  # Permiso para leer los archivos del repositorio
+      actions: write   # Permiso para ejecutar acciones
+      security-events: write  # Permiso para interactuar con la seguridad del repositorio
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2  # Checkout del código del repositorio
     - name: Build Docker image
       run: docker build -t your/image-to-test .
     - name: Run Snyk to check Docker image for vulnerabilities
       continue-on-error: true
-      uses: snyk/actions/docker@v1
+      uses: snyk/actions/docker@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: your/image-to-test
         args: --file=Dockerfile
-    - name: Fix SARIF severity values
-      run: |
-        sed -i 's/"severity": null/"severity": "unknown"/g' snyk.sarif
     - name: Validate SARIF file
       run: |
         if grep -q '"severity": null' snyk.sarif; then
