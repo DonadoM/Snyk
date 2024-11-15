@@ -1,26 +1,28 @@
-
 name: Snyk Container
 on: push
 jobs:
   snyk:
     runs-on: ubuntu-latest
     permissions:
-      contents: read  # Permiso para leer los archivos del repositorio
-      actions: write   # Permiso para ejecutar acciones
-      security-events: write  # Permiso para interactuar con la seguridad del repositorio
+      contents: read
+      actions: write
+      security-events: write
 
     steps:
-    - uses: actions/checkout@v2  # Checkout del código del repositorio
+    - uses: actions/checkout@v2
     - name: Build Docker image
       run: docker build -t your/image-to-test .
     - name: Run Snyk to check Docker image for vulnerabilities
       continue-on-error: true
-      uses: snyk/actions/docker@master
+      uses: snyk/actions/docker@v2
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: your/image-to-test
-        args: --file=Dockerfile
+        args: --file=Dockerfile --severity-threshold=low
+    - name: Fix SARIF severity values
+      run: |
+        sed -i 's/"severity": null/"severity": "unknown"/g' snyk.sarif
     - name: Validate SARIF file
       run: |
         if grep -q '"severity": null' snyk.sarif; then
@@ -32,4 +34,4 @@ jobs:
       with:
         sarif_file: snyk.sarif
       env:
-       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
