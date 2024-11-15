@@ -12,15 +12,14 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build Docker image
       run: docker build -t your/image-to-test .
-    - name: Set up Snyk CLI
+    - name: Run Snyk to check Docker image for vulnerabilities
+      continue-on-error: true
       uses: snyk/actions/docker@v1
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-    - name: Run Snyk to check Docker image for vulnerabilities
-      continue-on-error: true
-      run: snyk container test your/image-to-test --file=Dockerfile
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: your/image-to-test
+        args: --file=Dockerfile
     - name: Fix SARIF severity values
       run: |
         sed -i 's/"severity": null/"severity": "unknown"/g' snyk.sarif
