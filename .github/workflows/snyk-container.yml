@@ -1,4 +1,5 @@
 name: Snyk Container
+
 on:
   push:
     branches: [ "main" ]
@@ -6,8 +7,10 @@ on:
     branches: [ "main" ]
   schedule:
     - cron: '18 9 * * 3'
+
 permissions:
   contents: read
+
 jobs:
   snyk:
     permissions:
@@ -15,39 +18,45 @@ jobs:
       security-events: write
       actions: read
     runs-on: ubuntu-latest
+
     steps:
+      # Paso 1: Clonar el repositorio
       - uses: actions/checkout@v3
-      
+
+      # Paso 2: Construir la imagen Docker
       - name: Build a Docker image
         run: docker build -t your/image-to-test .
-      
+
+      # Paso 3: Ejecutar Snyk para comprobar vulnerabilidades en la imagen Docker
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
-        uses: snyk/actions/docker@master
+        uses: snyk/actions/docker@v2
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: your/image-to-test
-          args: |
-            --file=Dockerfile
-            --sarif-file-output=/github/workspace/snyk.sarif
-      
+          args: --file=Dockerfile --sarif-file-output=snyk.sarif
+
+      # Paso 4: Comprobar si el archivo SARIF existe
       - name: Check if SARIF file exists
         run: |
-          if [ ! -f /github/workspace/snyk.sarif ]; then
+          if [ ! -f snyk.sarif ]; then
             echo "SARIF file not found"
             exit 1
           fi
-      
+
+      # Paso 5: Validar el archivo SARIF
       - name: Validate SARIF file
         run: |
-          if ! jq -e '.runs[].results[].ruleId' /github/workspace/snyk.sarif > /dev/null; then
+          sudo apt-get update && sudo apt-get install -y jq
+          if ! jq -e '.runs[].results[].ruleId' snyk.sarif > /dev/null; then
             echo "Invalid SARIF file: missing ruleId"
             exit 1
           fi
-      
+
+      # Paso 6: Subir los resultados a GitHub Code Scanning
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: /github/workspace/snyk.sarif
+          sarif_file: snyk.sarif
