@@ -26,7 +26,7 @@ jobs:
 
       # Paso 4: Escaneo de contenedor con Snyk
       - name: Snyk Container Scan
-        uses: snyk/actions/container@v3
+        uses: snyk/actions/container@v1
         with:
           image: my-container-image:latest
           args: --file=Dockerfile --severity-threshold=high
