@@ -11,16 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Paso 1: Checkout del código
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Paso 2: Instalar Docker (si no está instalado)
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+
+      # Paso 3: Construir la imagen de Docker
       - name: Build Docker Image
         run: docker build -t my-container-image:latest .
 
+      # Paso 4: Instalar Snyk CLI
+      - name: Install Snyk CLI
+        run: curl -sL https://snyk.io/install | bash
+
+      # Paso 5: Escanear la imagen del contenedor con Snyk
       - name: Snyk Container Scan
-        uses: snyk/actions/container@v1
-        with:
-          image: my-container-image:latest
-          args: --file=Dockerfile --severity-threshold=high
+        run: snyk container test my-container-image:latest --file=Dockerfile --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
