@@ -2,11 +2,11 @@ name: Snyk Container
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   schedule:
-    - cron: '18 9 * * 3'
+    - cron: "18 9 * * 3"
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
       # Paso 3: Ejecutar Snyk para comprobar vulnerabilidades en la imagen Docker
       - name: Run Snyk to check Docker image for vulnerabilities
         continue-on-error: true
-        uses: snyk/actions/docker@v1.107.0
+        uses: snyk/actions/docker@main
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
